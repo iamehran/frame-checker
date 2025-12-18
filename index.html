@@ -131,9 +131,10 @@
 
         .controls {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             margin: 30px 0;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .control-group {
@@ -434,6 +435,13 @@
                     const url = URL.createObjectURL(file);
                     setVideoUrl(url);
                     setResults(null);
+                    
+                    // Auto-detect after a short delay
+                    setTimeout(() => {
+                        if (videoRef.current) {
+                            detectFrames();
+                        }
+                    }, 500);
                 }
             };
 
@@ -453,16 +461,28 @@
                 setDragging(false);
             };
 
-            const detectFrames = () => {
+            const detectFrames = async () => {
                 if (!videoRef.current || !canvasRef.current) return;
 
                 setProcessing(true);
+                setResults(null);
 
-                const videoEl = videoRef.current;
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
+                try {
+                    const videoEl = videoRef.current;
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext('2d');
 
-                videoEl.onloadedmetadata = () => {
+                    // Wait for video to load metadata
+                    await new Promise((resolve, reject) => {
+                        if (videoEl.readyState >= 1) {
+                            resolve();
+                        } else {
+                            videoEl.onloadedmetadata = resolve;
+                            videoEl.onerror = reject;
+                            setTimeout(() => reject(new Error('Video load timeout')), 10000);
+                        }
+                    });
+
                     const width = videoEl.videoWidth;
                     const height = videoEl.videoHeight;
 
@@ -476,13 +496,16 @@
                     canvas.width = width;
                     canvas.height = height;
 
-                    // Seek to middle of video
-                    videoEl.currentTime = videoEl.duration / 2;
-                };
+                    // Seek to 2 seconds (just one frame needed)
+                    videoEl.currentTime = Math.min(2, videoEl.duration / 2);
 
-                videoEl.onseeked = () => {
-                    const width = videoRef.current.videoWidth;
-                    const height = videoRef.current.videoHeight;
+                    // Wait for seek to complete
+                    await new Promise((resolve) => {
+                        videoEl.onseeked = resolve;
+                    });
+
+                    // Small delay to ensure frame is ready
+                    await new Promise(resolve => setTimeout(resolve, 100));
 
                     // Draw video frame
                     ctx.drawImage(videoEl, 0, 0, width, height);
@@ -533,8 +556,12 @@
                     });
 
                     setResults(participants);
+                } catch (error) {
+                    console.error('Detection error:', error);
+                    alert('Error processing video. Please try a different file.');
+                } finally {
                     setProcessing(false);
-                };
+                }
             };
 
             const copyToClipboard = (text) => {
@@ -577,7 +604,10 @@
                                             <button
                                                 key={count}
                                                 className={`participant-btn ${participantCount === count ? 'active' : ''}`}
-                                                onClick={() => setParticipantCount(count)}
+                                                onClick={() => {
+                                                    setParticipantCount(count);
+                                                    setTimeout(() => detectFrames(), 100);
+                                                }}
                                             >
                                                 {count} People
                                             </button>
@@ -589,7 +619,19 @@
                                     onClick={detectFrames}
                                     disabled={processing}
                                 >
-                                    {processing ? 'Detecting...' : 'Detect Frames'}
+                                    {processing ? 'Detecting...' : 'Re-Detect'}
+                                </button>
+                                <button 
+                                    className="detect-btn"
+                                    onClick={() => {
+                                        setVideo(null);
+                                        setVideoUrl(null);
+                                        setResults(null);
+                                        setVideoMetadata(null);
+                                    }}
+                                    style={{background: 'var(--bg-input)', color: 'var(--text-primary)'}}
+                                >
+                                    New Video
                                 </button>
                             </div>
 
@@ -616,7 +658,7 @@
 
                             <div className="video-preview">
                                 <div className="video-container">
-                                    <video ref={videoRef} src={videoUrl} style={{display: 'none'}} />
+                                    <video ref={videoRef} src={videoUrl} preload="metadata" style={{display: 'none'}} />
                                     <canvas ref={canvasRef} className="video-canvas" />
                                 </div>
                             </div>
@@ -624,7 +666,10 @@
                             {processing && (
                                 <div className="loading">
                                     <div className="spinner"></div>
-                                    <div>Analyzing video frames...</div>
+                                    <div>Analyzing frame at 2s mark...</div>
+                                    <div style={{fontSize: '12px', marginTop: '10px', opacity: 0.6}}>
+                                        (Only checking 1 frame - fast!)
+                                    </div>
                                 </div>
                             )}
 
