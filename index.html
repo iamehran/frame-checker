@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Meet Frame Detector - Vibe Reel</title>
+    <title>Square Stack Cropper - Vibe Reel</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -23,7 +24,6 @@
             --accent-green: #00ff9f;
             --accent-yellow: #ffd500;
             --accent-red: #ff3366;
-            --accent-purple: #a855f7;
             --text-primary: #e6e9ef;
             --text-secondary: #8b92a3;
             --border: #2a2f3a;
@@ -34,35 +34,17 @@
             background: var(--bg-dark);
             color: var(--text-primary);
             min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(0, 217, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 40px 20px;
-            position: relative;
-            z-index: 1;
         }
 
         .header {
             text-align: center;
             margin-bottom: 50px;
-            position: relative;
         }
 
         .logo {
@@ -74,84 +56,19 @@
             text-transform: uppercase;
         }
 
-        .ai-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
-            color: white;
-            font-size: 11px;
-            font-weight: 700;
-            border-radius: 20px;
-            margin-left: 10px;
-            letter-spacing: 1px;
-        }
-
         h1 {
             font-size: 48px;
             font-weight: 700;
             margin-bottom: 15px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             letter-spacing: -1px;
         }
 
         .subtitle {
             color: var(--text-secondary);
             font-size: 14px;
-            font-weight: 400;
-        }
-
-        .api-key-section {
-            background: var(--bg-card);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .api-key-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .api-key-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .api-key-input {
-            width: 100%;
-            padding: 12px 15px;
-            background: var(--bg-input);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            transition: all 0.2s ease;
-        }
-
-        .api-key-input:focus {
-            outline: none;
-            border-color: var(--accent-cyan);
-        }
-
-        .api-help {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 8px;
-        }
-
-        .api-help a {
-            color: var(--accent-cyan);
-            text-decoration: none;
         }
 
         .upload-section {
@@ -162,24 +79,15 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
 
         .upload-section:hover {
             border-color: var(--accent-cyan);
-            background: rgba(0, 217, 255, 0.03);
-        }
-
-        .upload-section.dragging {
-            border-color: var(--accent-purple);
-            background: rgba(168, 85, 247, 0.05);
         }
 
         .upload-icon {
             font-size: 64px;
             margin-bottom: 20px;
-            opacity: 0.5;
         }
 
         .upload-text {
@@ -188,58 +96,59 @@
             font-weight: 600;
         }
 
-        .upload-subtext {
-            font-size: 13px;
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .control-label {
+            font-size: 11px;
             color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .time-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
         }
 
         .detect-btn {
-            width: 100%;
-            padding: 16px 40px;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            padding: 14px 40px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
             border: none;
             border-radius: 8px;
-            color: white;
+            color: var(--bg-dark);
             font-family: 'JetBrains Mono', monospace;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 20px 0;
-        }
-
-        .detect-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
         }
 
         .detect-btn:disabled {
             opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .video-preview {
-            position: relative;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 30px 0;
-        }
-
-        .video-container {
-            position: relative;
-            width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
         }
 
         .video-canvas {
             width: 100%;
-            height: auto;
             border-radius: 8px;
-            display: block;
+            background: var(--bg-card);
+            margin: 20px 0;
         }
 
         .results-grid {
@@ -254,87 +163,33 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .participant-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
-            border-radius: 12px 12px 0 0;
-        }
-
-        .participant-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .participant-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
         }
 
         .participant-id {
             font-size: 18px;
             font-weight: 700;
             color: var(--accent-cyan);
-        }
-
-        .participant-color {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            border: 2px solid var(--border);
-        }
-
-        .coord-group {
-            margin: 15px 0;
-        }
-
-        .coord-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-bottom: 15px;
         }
 
         .coord-value {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 16px;
             color: var(--accent-green);
-            font-family: 'Space Mono', monospace;
+            margin: 10px 0;
         }
 
         .ffmpeg-command {
             background: var(--bg-input);
-            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 15px;
             margin-top: 15px;
             position: relative;
         }
 
-        .ffmpeg-label {
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
         .ffmpeg-code {
             font-size: 12px;
             color: var(--accent-yellow);
             word-break: break-all;
-            line-height: 1.6;
         }
 
         .copy-btn {
@@ -346,41 +201,7 @@
             color: var(--bg-dark);
             border: none;
             border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .copy-btn:hover {
-            background: var(--accent-green);
-        }
-
-        .stats-bar {
-            display: flex;
-            gap: 30px;
-            padding: 20px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .stat {
-            flex: 1;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--accent-cyan);
         }
 
         .loading {
@@ -389,58 +210,8 @@
             color: var(--text-secondary);
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            margin: 0 auto 20px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent-purple);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .ai-thinking {
-            font-size: 13px;
-            color: var(--accent-purple);
-            margin-top: 10px;
-        }
-
         input[type="file"] {
             display: none;
-        }
-
-        .error-message {
-            background: rgba(255, 51, 102, 0.1);
-            border: 1px solid var(--accent-red);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            color: var(--accent-red);
-            font-size: 13px;
-        }
-
-        .reset-btn {
-            padding: 12px 30px;
-            background: var(--bg-input);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .reset-btn:hover {
-            border-color: var(--accent-cyan);
-            background: rgba(0, 217, 255, 0.1);
         }
     </style>
 </head>
@@ -448,400 +219,353 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useRef } = React;
+        const { useState, useRef, useEffect } = React;
 
-        const COLORS = ['#00d9ff', '#00ff9f', '#ffd500', '#ff3366', '#a855f7', '#06b6d4'];
+        const COLORS = ['#00d9ff', '#00ff9f', '#ffd500', '#ff3366'];
 
-        function AIFrameDetector() {
-            const [apiKey, setApiKey] = useState('');
+        function App() {
+            const [modelsLoaded, setModelsLoaded] = useState(false);
             const [video, setVideo] = useState(null);
             const [videoUrl, setVideoUrl] = useState(null);
             const [results, setResults] = useState(null);
             const [processing, setProcessing] = useState(false);
-            const [dragging, setDragging] = useState(false);
-            const [videoMetadata, setVideoMetadata] = useState(null);
-            const [error, setError] = useState(null);
+            const [seekTime, setSeekTime] = useState(10);
             
             const fileInputRef = useRef(null);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
 
+            useEffect(() => {
+                loadModels();
+            }, []);
+
+            const loadModels = async () => {
+                try {
+                    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/';
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                    setModelsLoaded(true);
+                } catch (error) {
+                    console.error('Model load error:', error);
+                }
+            };
+
             const handleFileSelect = (file) => {
                 if (file && file.type.startsWith('video/')) {
                     setVideo(file);
-                    const url = URL.createObjectURL(file);
-                    setVideoUrl(url);
+                    setVideoUrl(URL.createObjectURL(file));
                     setResults(null);
-                    setError(null);
                 }
             };
 
-            const handleDrop = (e) => {
-                e.preventDefault();
-                setDragging(false);
-                const file = e.dataTransfer.files[0];
-                handleFileSelect(file);
-            };
-
-            const captureFrame = async () => {
-                return new Promise((resolve, reject) => {
-                    const videoEl = videoRef.current;
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    videoEl.onloadedmetadata = () => {
-                        canvas.width = videoEl.videoWidth;
-                        canvas.height = videoEl.videoHeight;
-
-                        setVideoMetadata({
-                            width: videoEl.videoWidth,
-                            height: videoEl.videoHeight,
-                            duration: videoEl.duration,
-                            aspectRatio: (videoEl.videoWidth / videoEl.videoHeight).toFixed(2)
-                        });
-
-                        // Seek to 2 seconds
-                        videoEl.currentTime = Math.min(2, videoEl.duration / 2);
-                    };
-
-                    videoEl.onseeked = () => {
-                        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-                        canvas.toBlob((blob) => {
-                            resolve({ blob, width: canvas.width, height: canvas.height });
-                        }, 'image/jpeg', 0.95);
-                    };
-
-                    videoEl.onerror = reject;
-                });
-            };
-
-            const detectWithAI = async () => {
-                if (!apiKey) {
-                    setError('Please enter your OpenAI API key');
-                    return;
-                }
-
-                if (!video) {
-                    setError('Please upload a video first');
-                    return;
-                }
+            const detectFaces = async () => {
+                if (!videoRef.current || !canvasRef.current) return;
 
                 setProcessing(true);
-                setError(null);
-                setResults(null);
+
+                const generateStackCommand = (count) => {
+                    const inputs = Array.from({length: count}, (_, i) => `-i participant_${i + 1}.mp4`).join(' ');
+                    const filters = count === 2 
+                        ? '[0:v][1:v]vstack=inputs=2[v]'
+                        : count === 3
+                        ? '[0:v][1:v][2:v]vstack=inputs=3[v]'
+                        : '[0:v][1:v][2:v][3:v]vstack=inputs=4[v]';
+                    
+                    // Basic stack command
+                    const basicCommand = `ffmpeg ${inputs} -filter_complex "${filters}" -map "[v]" -c:v libx264 -preset fast -crf 23 stacked_output.mp4`;
+                    
+                    // Instagram-ready command (scales to 1080x1920)
+                    const instaCommand = `ffmpeg ${inputs} -filter_complex "${filters};[v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2[final]" -map "[final]" -c:v libx264 -preset fast -crf 23 instagram_ready.mp4`;
+                    
+                    return { basicCommand, instaCommand };
+                };
 
                 try {
-                    // Capture frame from video
-                    const { blob, width, height } = await captureFrame();
-                    
-                    // Convert blob to base64
-                    const reader = new FileReader();
-                    const base64Image = await new Promise((resolve) => {
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
+                    const videoEl = videoRef.current;
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext('2d');
+
+                    await new Promise((resolve) => {
+                        if (videoEl.readyState >= 1) resolve();
+                        else videoEl.onloadedmetadata = resolve;
                     });
 
-                    // Call OpenAI Vision API
-                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify({
-                            model: 'gpt-4o',
-                            messages: [
-                                {
-                                    role: 'user',
-                                    content: [
-                                        {
-                                            type: 'text',
-                                            text: `Analyze this Google Meet/Zoom video conference screenshot. Identify each participant's video frame/box.
+                    const width = videoEl.videoWidth;
+                    const height = videoEl.videoHeight;
+                    canvas.width = width;
+                    canvas.height = height;
 
-For EACH participant visible, provide their bounding box coordinates as a percentage of the total image dimensions (0-100%).
+                    videoEl.currentTime = Math.min(seekTime, videoEl.duration - 1);
+                    await new Promise((resolve) => { videoEl.onseeked = resolve; });
+                    await new Promise(resolve => setTimeout(resolve, 200));
 
-Return ONLY a JSON array with this exact format:
-[
-  {"id": 1, "x_percent": 0, "y_percent": 0, "width_percent": 50, "height_percent": 50},
-  {"id": 2, "x_percent": 50, "y_percent": 0, "width_percent": 50, "height_percent": 50}
-]
+                    ctx.drawImage(videoEl, 0, 0, width, height);
 
-Where:
-- x_percent, y_percent = top-left corner position (percentage)
-- width_percent, height_percent = box size (percentage)
-- Each participant gets sequential id (1, 2, 3...)
+                    const detections = await faceapi.detectAllFaces(
+                        canvas,
+                        new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 })
+                    );
 
-The image dimensions are ${width}x${height} pixels.
-
-Return ONLY the JSON array, no other text.`
-                                        },
-                                        {
-                                            type: 'image_url',
-                                            image_url: {
-                                                url: base64Image
-                                            }
-                                        }
-                                    ]
-                                }
-                            ],
-                            max_tokens: 1000
-                        })
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error?.message || 'API request failed');
+                    if (detections.length === 0) {
+                        alert('No faces detected. Try a different timestamp.');
+                        setProcessing(false);
+                        return;
                     }
 
-                    const data = await response.json();
-                    const aiResponse = data.choices[0].message.content;
+                    // Smart grid detection based on face positions
+                    const participants = detections.map((detection, index) => {
+                        const box = detection.box;
+                        const faceCenterX = box.x + box.width / 2;
+                        const faceCenterY = box.y + box.height / 2;
 
-                    // Parse AI response
-                    const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
-                    if (!jsonMatch) {
-                        throw new Error('Could not parse AI response');
-                    }
+                        // Find grid cell by detecting edges around face
+                        // Look for dark pixels (borders) expanding from face
+                        let left = Math.max(0, faceCenterX);
+                        let right = Math.min(width, faceCenterX);
+                        let top = Math.max(0, faceCenterY);
+                        let bottom = Math.min(height, faceCenterY);
 
-                    const participantData = JSON.parse(jsonMatch[0]);
+                        // Expand outward until we hit frame edge or dark border
+                        const imageData = ctx.getImageData(0, 0, width, height);
+                        const data = imageData.data;
 
-                    // Convert percentages to pixel coordinates
-                    const participants = participantData.map((p, index) => {
-                        // Convert from percentage to pixels
-                        let x = Math.floor((p.x_percent / 100) * width);
-                        let y = Math.floor((p.y_percent / 100) * height);
-                        let w = Math.floor((p.width_percent / 100) * width);
-                        let h = Math.floor((p.height_percent / 100) * height);
+                        // Search left
+                        for (let x = Math.floor(faceCenterX); x > 0; x -= 10) {
+                            const idx = (Math.floor(faceCenterY) * width + x) * 4;
+                            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                            if (brightness < 20) { left = x + 10; break; }
+                            left = x;
+                        }
 
-                        // Add small padding to avoid borders
-                        const padding = 5;
-                        x += padding;
-                        y += padding;
-                        w -= padding * 2;
-                        h -= padding * 2;
+                        // Search right
+                        for (let x = Math.floor(faceCenterX); x < width; x += 10) {
+                            const idx = (Math.floor(faceCenterY) * width + x) * 4;
+                            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                            if (brightness < 20) { right = x - 10; break; }
+                            right = x;
+                        }
 
-                        // Adjust for 9:16 portrait ratio (Reels/Shorts)
-                        const targetRatio = 9 / 16;
+                        // Search top
+                        for (let y = Math.floor(faceCenterY); y > 0; y -= 10) {
+                            const idx = (y * width + Math.floor(faceCenterX)) * 4;
+                            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                            if (brightness < 20) { top = y + 10; break; }
+                            top = y;
+                        }
+
+                        // Search bottom
+                        for (let y = Math.floor(faceCenterY); y < height; y += 10) {
+                            const idx = (y * width + Math.floor(faceCenterX)) * 4;
+                            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                            if (brightness < 20) { bottom = y - 10; break; }
+                            bottom = y;
+                        }
+
+                        // Add padding
+                        const padding = 15;
+                        let x = Math.floor(left + padding);
+                        let y = Math.floor(top + padding);
+                        let w = Math.floor(right - left - padding * 2);
+                        let h = Math.floor(bottom - top - padding * 2);
+
+                        // Make it SQUARE (1:1 ratio) for stacking
+                        const targetRatio = 1; // Square
                         const currentRatio = w / h;
 
                         if (currentRatio > targetRatio) {
-                            // Too wide, crop from sides
-                            const newW = Math.floor(h * targetRatio);
+                            // Too wide, make it square by reducing width
+                            const newW = h;
                             x += Math.floor((w - newW) / 2);
                             w = newW;
                         } else {
-                            // Too tall, crop from top/bottom
-                            const newH = Math.floor(w / targetRatio);
+                            // Too tall, make it square by reducing height
+                            const newH = w;
                             y += Math.floor((h - newH) / 2);
                             h = newH;
                         }
 
+                        const color = COLORS[index % COLORS.length];
+
+                        // Draw
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x, y, w, h);
+                        ctx.fillStyle = color;
+                        ctx.font = 'bold 24px sans-serif';
+                        ctx.fillText(`P${index + 1}`, x + 10, y + 35);
+
+                        // Face box
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        ctx.setLineDash([]);
+
                         const cropFilter = `crop=${w}:${h}:${x}:${y}`;
 
                         return {
-                            id: p.id,
-                            color: COLORS[index % COLORS.length],
+                            id: index + 1,
+                            color,
                             coordinates: { x, y, width: w, height: h },
                             cropFilter,
-                            ffmpegCommand: `ffmpeg -i input.mp4 -vf "${cropFilter},scale=1080:1920" -c:v libx264 -preset fast -crf 23 -c:a copy participant_${p.id}.mp4`
+                            individualCommand: `ffmpeg -i input.mp4 -vf "${cropFilter}" -c:v libx264 -preset fast -crf 23 -c:a copy participant_${index + 1}.mp4`,
+                            ffmpegCommand: `ffmpeg -i input.mp4 -vf "${cropFilter}" -c:v libx264 -preset fast -crf 23 -c:a copy participant_${index + 1}.mp4`
                         };
                     });
 
-                    // Draw on canvas
-                    const canvas = canvasRef.current;
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    const img = new Image();
-                    img.onload = () => {
-                        ctx.drawImage(img, 0, 0);
-
-                        participants.forEach(p => {
-                            ctx.strokeStyle = p.color;
-                            ctx.lineWidth = 4;
-                            ctx.strokeRect(p.coordinates.x, p.coordinates.y, p.coordinates.width, p.coordinates.height);
-
-                            ctx.fillStyle = p.color;
-                            ctx.font = 'bold 24px JetBrains Mono';
-                            ctx.fillText(`P${p.id}`, p.coordinates.x + 10, p.coordinates.y + 35);
-                        });
-                    };
-                    img.src = base64Image;
-
                     setResults(participants);
-                } catch (err) {
-                    console.error('Detection error:', err);
-                    setError(err.message || 'Failed to detect frames. Please try again.');
+                    
+                    // Generate stacking command
+                    if (participants.length > 1) {
+                        const commands = generateStackCommand(participants.length);
+                        setResults([...participants, { 
+                            id: 'stack', 
+                            basicCommand: commands.basicCommand,
+                            instaCommand: commands.instaCommand,
+                            totalHeight: participants.length * (participants[0]?.coordinates.height || 1080)
+                        }]);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Detection failed: ' + error.message);
                 } finally {
                     setProcessing(false);
                 }
             };
 
-            const copyToClipboard = (text) => {
-                navigator.clipboard.writeText(text);
-            };
-
-            const reset = () => {
-                setVideo(null);
-                setVideoUrl(null);
-                setResults(null);
-                setVideoMetadata(null);
-                setError(null);
-            };
-
             return (
                 <div className="container">
                     <div className="header">
-                        <div className="logo">⚡ Vibe Reel</div>
-                        <h1>
-                            AI Frame Detector
-                            <span className="ai-badge">AI-POWERED</span>
-                        </h1>
-                        <div className="subtitle">GPT-4 Vision detects exact participant coordinates for FFmpeg cropping</div>
+                        <div className="logo">⚡ VIBE REEL</div>
+                        <h1>Square Stack Cropper</h1>
+                        <div className="subtitle">Creates square crops (1:1) that stack vertically for Instagram Reels</div>
                     </div>
 
-                    <div className="api-key-section">
-                        <div className="api-key-header">
-                            <div className="api-key-title">🔑 OpenAI API Key</div>
-                        </div>
-                        <input
-                            type="password"
-                            className="api-key-input"
-                            placeholder="sk-proj-..."
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                        />
-                        <div className="api-help">
-                            Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
-                        </div>
-                    </div>
+                    {!modelsLoaded && <div className="loading">Loading models...</div>}
 
-                    {error && (
-                        <div className="error-message">
-                            ⚠️ {error}
-                        </div>
-                    )}
-
-                    {!video ? (
-                        <div 
-                            className={`upload-section ${dragging ? 'dragging' : ''}`}
-                            onClick={() => fileInputRef.current.click()}
-                            onDrop={handleDrop}
-                            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                            onDragLeave={() => setDragging(false)}
-                        >
-                            <div className="upload-icon">🎥</div>
-                            <div className="upload-text">Drop your Google Meet/Zoom recording</div>
-                            <div className="upload-subtext">AI will detect participant frames automatically</div>
-                            <input 
-                                ref={fileInputRef}
-                                type="file" 
-                                accept="video/*"
-                                onChange={(e) => handleFileSelect(e.target.files[0])}
-                            />
-                        </div>
-                    ) : (
+                    {modelsLoaded && !video && (
                         <>
-                            <button 
-                                className="detect-btn"
-                                onClick={detectWithAI}
-                                disabled={processing || !apiKey}
-                            >
-                                {processing ? '🤖 AI Analyzing...' : '✨ Detect Frames with AI'}
-                            </button>
-
-                            {videoMetadata && (
-                                <div className="stats-bar">
-                                    <div className="stat">
-                                        <div className="stat-label">Resolution</div>
-                                        <div className="stat-value">{videoMetadata.width}×{videoMetadata.height}</div>
-                                    </div>
-                                    <div className="stat">
-                                        <div className="stat-label">Aspect Ratio</div>
-                                        <div className="stat-value">{videoMetadata.aspectRatio}</div>
-                                    </div>
-                                    <div className="stat">
-                                        <div className="stat-label">Duration</div>
-                                        <div className="stat-value">{Math.floor(videoMetadata.duration)}s</div>
-                                    </div>
-                                    <div className="stat">
-                                        <div className="stat-label">Status</div>
-                                        <div className="stat-value" style={{fontSize: '16px'}}>
-                                            {results ? '✓ Detected' : processing ? '⏳ Processing' : '⚡ Ready'}
-                                        </div>
-                                    </div>
+                            <div style={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                marginBottom: '30px',
+                                fontSize: '13px',
+                                lineHeight: '1.8'
+                            }}>
+                                <div style={{color: 'var(--accent-cyan)', fontWeight: 700, marginBottom: '10px'}}>
+                                    📋 How it works:
                                 </div>
-                            )}
-
-                            <div className="video-preview">
-                                <div className="video-container">
-                                    <video ref={videoRef} src={videoUrl} preload="metadata" style={{display: 'none'}} />
-                                    <canvas ref={canvasRef} className="video-canvas" />
+                                <div style={{color: 'var(--text-secondary)'}}>
+                                    <strong>Step 1:</strong> Upload video → Detects each participant as a SQUARE crop (1:1 ratio)<br/>
+                                    <strong>Step 2:</strong> Use FFmpeg to crop each participant to separate files<br/>
+                                    <strong>Step 3:</strong> Stack all squares vertically into one final Instagram Reel<br/>
+                                    <br/>
+                                    <strong style={{color: 'var(--accent-green)'}}>Result:</strong> Vertical video with each person in their own square box!
                                 </div>
                             </div>
+                            
+                            <div className="upload-section" onClick={() => fileInputRef.current.click()}>
+                                <div className="upload-icon">🎥</div>
+                                <div className="upload-text">Upload Google Meet Recording</div>
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file" 
+                                    accept="video/*"
+                                    onChange={(e) => handleFileSelect(e.target.files[0])}
+                                />
+                            </div>
+                        </>
+                    )}
 
-                            {processing && (
-                                <div className="loading">
-                                    <div className="spinner"></div>
-                                    <div>AI is analyzing the video frame...</div>
-                                    <div className="ai-thinking">GPT-4 Vision identifying participant positions</div>
+                    {video && (
+                        <>
+                            <div className="controls">
+                                <div className="control-group">
+                                    <div className="control-label">Timestamp (seconds)</div>
+                                    <input
+                                        type="number"
+                                        className="time-input"
+                                        value={seekTime}
+                                        onChange={(e) => setSeekTime(Number(e.target.value))}
+                                        min="0"
+                                    />
                                 </div>
-                            )}
+                                <button className="detect-btn" onClick={detectFaces} disabled={processing}>
+                                    {processing ? 'Detecting...' : 'Detect Faces'}
+                                </button>
+                            </div>
+
+                            <video ref={videoRef} src={videoUrl} style={{display: 'none'}} />
+                            <canvas ref={canvasRef} className="video-canvas" />
+
+                            {processing && <div className="loading">Processing...</div>}
 
                             {results && (
-                                <>
-                                    <button className="reset-btn" onClick={reset}>
-                                        ↻ Upload New Video
-                                    </button>
-
-                                    <div className="results-grid">
-                                        {results.map(participant => (
-                                            <div key={participant.id} className="participant-card">
-                                                <div className="participant-header">
-                                                    <div className="participant-id">Participant {participant.id}</div>
-                                                    <div 
-                                                        className="participant-color" 
-                                                        style={{backgroundColor: participant.color}}
-                                                    />
-                                                </div>
-
-                                                <div className="coord-group">
-                                                    <div className="coord-label">Position (x, y)</div>
-                                                    <div className="coord-value">
-                                                        {participant.coordinates.x}, {participant.coordinates.y}
-                                                    </div>
-                                                </div>
-
-                                                <div className="coord-group">
-                                                    <div className="coord-label">Size (w × h)</div>
-                                                    <div className="coord-value">
-                                                        {participant.coordinates.width} × {participant.coordinates.height}
-                                                    </div>
-                                                </div>
-
-                                                <div className="coord-group">
-                                                    <div className="coord-label">Crop Filter</div>
-                                                    <div className="coord-value" style={{fontSize: '14px'}}>
-                                                        {participant.cropFilter}
-                                                    </div>
-                                                </div>
-
-                                                <div className="ffmpeg-command">
-                                                    <div className="ffmpeg-label">FFmpeg Command</div>
-                                                    <div className="ffmpeg-code">
-                                                        {participant.ffmpegCommand}
-                                                    </div>
-                                                    <button 
-                                                        className="copy-btn"
-                                                        onClick={() => copyToClipboard(participant.ffmpegCommand)}
-                                                    >
-                                                        Copy
-                                                    </button>
-                                                </div>
+                                <div className="results-grid">
+                                    {results.filter(p => p.id !== 'stack').map(p => (
+                                        <div key={p.id} className="participant-card">
+                                            <div className="participant-id">Participant {p.id} (Square)</div>
+                                            <div className="coord-value">
+                                                Position: ({p.coordinates.x}, {p.coordinates.y})
                                             </div>
-                                        ))}
-                                    </div>
-                                </>
+                                            <div className="coord-value">
+                                                Size: {p.coordinates.width} × {p.coordinates.height}
+                                            </div>
+                                            <div className="coord-value" style={{fontSize: '14px'}}>
+                                                Ratio: 1:1 (Square)
+                                            </div>
+                                            <div className="ffmpeg-command">
+                                                <div className="ffmpeg-code">{p.ffmpegCommand}</div>
+                                                <button 
+                                                    className="copy-btn"
+                                                    onClick={() => navigator.clipboard.writeText(p.ffmpegCommand)}
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    {results.find(r => r.id === 'stack') && (
+                                        <div className="participant-card" style={{gridColumn: '1 / -1', background: 'var(--bg-input)', borderColor: 'var(--accent-green)'}}>
+                                            <div className="participant-id" style={{color: 'var(--accent-green)'}}>
+                                                📚 STEP 2: Stack All Squares Vertically
+                                            </div>
+                                            <div className="coord-value">
+                                                Natural Stack: 1080 × {results.find(r => r.id === 'stack').totalHeight}
+                                            </div>
+                                            <div className="coord-value" style={{fontSize: '13px', marginTop: '5px', marginBottom: '15px'}}>
+                                                Instagram Ready: 1080 × 1920 (9:16 ratio)
+                                            </div>
+                                            
+                                            <div style={{marginBottom: '15px', fontSize: '12px', color: 'var(--accent-cyan)'}}>
+                                                <strong>Option A: Natural Stack</strong> (preserves all content)
+                                            </div>
+                                            <div className="ffmpeg-command" style={{marginBottom: '20px'}}>
+                                                <div className="ffmpeg-code">{results.find(r => r.id === 'stack').basicCommand}</div>
+                                                <button 
+                                                    className="copy-btn"
+                                                    onClick={() => navigator.clipboard.writeText(results.find(r => r.id === 'stack').basicCommand)}
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                            
+                                            <div style={{marginBottom: '15px', fontSize: '12px', color: 'var(--accent-green)'}}>
+                                                <strong>Option B: Instagram Ready</strong> (fits 1080×1920 with black bars if needed)
+                                            </div>
+                                            <div className="ffmpeg-command">
+                                                <div className="ffmpeg-code">{results.find(r => r.id === 'stack').instaCommand}</div>
+                                                <button 
+                                                    className="copy-btn"
+                                                    onClick={() => navigator.clipboard.writeText(results.find(r => r.id === 'stack').instaCommand)}
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </>
                     )}
@@ -849,7 +573,7 @@ Return ONLY the JSON array, no other text.`
             );
         }
 
-        ReactDOM.render(<AIFrameDetector />, document.getElementById('root'));
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
